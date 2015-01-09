@@ -40,7 +40,11 @@ feature "Info page" do
 
     visit "/info/apply-uk-visa"
 
-    expect(page).to have_text("Accurate metrics for multi-part formats aren’t available yet.")
+    # check lead metrics are present and correct
+
+    within("#per-page-metrics") do
+      ##
+    end
   end
 
   scenario "Seeing how many users are leaving via the site search" do

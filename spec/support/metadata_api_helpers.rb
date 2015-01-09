@@ -110,6 +110,17 @@ module MetadataAPIHelpers
         { "web_url" => response["artefact"]["web_url"] + "/part-2" },
         { "web_url" => response["artefact"]["web_url"] + "/part-3" },
       ]
+      response["performance"]["page_views"] += [
+        {"value"=>25000,
+         "path"=>"/apply-uk-visa/part-1",
+         "timestamp"=>"2014-07-03T00:00:00Z"},
+        {"value"=>24000,
+         "path"=>"/apply-uk-visa/part-2",
+         "timestamp"=>"2014-07-01T00:00:00Z"},
+        {"value"=>26000,
+         "path"=>"/apply-uk-visa/part-3",
+         "timestamp"=>"2014-07-02T00:00:00Z"}
+      ]
     end
   end
 end
