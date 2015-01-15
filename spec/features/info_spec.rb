@@ -40,10 +40,28 @@ feature "Info page" do
 
     visit "/info/apply-uk-visa"
 
-    # check lead metrics are present and correct
+    within("#lead-metrics") do
+      expect(page).to have_text("Unique pageviews 25k per day")
+    end
 
+    # check multipart formats are present and correct
     within("#per-page-metrics") do
-      ##
+      expect(page).to have_text("Unique pageviews")
+      expect(page).to have_text("25k per day")
+      expect(page).to have_text("24k per day")
+      expect(page).to have_text("26k per day")
+      expect(page).to have_text("Searches started from this page")
+      expect(page).to have_text("1.4k per week")
+      expect(page).to have_text("1.75k per week")
+      expect(page).to have_text("700 per week")
+      expect(page).to have_text("Problem reports")
+      expect(page).to have_text("4k per day")
+      expect(page).to have_text("5k per day")
+      expect(page).to have_text("6k per day")
+    end
+
+    within("#needs") do
+      expect(page).to have_text("As a non-EEA national")
     end
   end
 

@@ -121,6 +121,28 @@ module MetadataAPIHelpers
          "path"=>"/apply-uk-visa/part-3",
          "timestamp"=>"2014-07-02T00:00:00Z"}
       ]
+      response["performance"]["problem_reports"] += [
+        {"value"=>200,
+         "path"=>"/apply-uk-visa/part-1",
+         "timestamp"=>"2014-07-03T00:00:00Z"},
+        {"value"=>250,
+         "path"=>"/apply-uk-visa/part-2",
+         "timestamp"=>"2014-07-01T00:00:00Z"},
+        {"value"=>100,
+         "path"=>"/apply-uk-visa/part-3",
+         "timestamp"=>"2014-07-02T00:00:00Z"}
+      ]
+      response["performance"]["searches"] += [
+        {"value"=>4000,
+         "path"=>"/apply-uk-visa/part-1",
+         "timestamp"=>"2014-07-03T00:00:00Z"},
+        {"value"=>5000,
+         "path"=>"/apply-uk-visa/part-2",
+         "timestamp"=>"2014-07-01T00:00:00Z"},
+        {"value"=>6000,
+         "path"=>"/apply-uk-visa/part-3",
+         "timestamp"=>"2014-07-02T00:00:00Z"}
+      ]
     end
   end
 end
