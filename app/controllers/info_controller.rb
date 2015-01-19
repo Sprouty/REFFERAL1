@@ -1,5 +1,6 @@
+require 'uri'
 require 'govuk/client/metadata_api'
-require 'performance_data/lead_metrics'
+require 'performance_data/metrics'
 
 class InfoController < ApplicationController
   before_filter :set_expiry, only: :show
@@ -13,8 +14,17 @@ class InfoController < ApplicationController
       if InfoFrontend::FeatureFlags.needs_to_show == :only_validated
         @needs.select! { |need| InfoFrontend::FeatureFlags.validated_need_ids.include?(need["id"]) }
       end
-      @lead_metrics = lead_metrics_from(@artefact, metadata.fetch("performance"))
+      part_urls = []
+      details = @artefact.fetch("details")
+      if details.key?("parts")
+        part_urls = details.fetch("parts") || []
+      end
+      part_urls.map! {|part_url| URI(part_url["web_url"]).path }
+      calculated_metrics = metrics_from(@artefact, metadata.fetch("performance"), part_urls)
+      @lead_metrics = calculated_metrics[:lead_metrics]
+      @per_page_metrics = calculated_metrics[:per_page_metrics]
       @show_needs = [:all, :only_validated].include?(InfoFrontend::FeatureFlags.needs_to_show)
+
     else
       response.headers[Slimmer::Headers::SKIP_HEADER] = "1"
       head 404
@@ -22,20 +32,45 @@ class InfoController < ApplicationController
   end
 
 private
-  def lead_metrics_from(artefact, performance_data)
-    if artefact.fetch("details")["parts"]
-      return nil # can't present metrics for multi-part content yet
-    else
-      uniques = (performance_data["page_views"] || []).map {|l| l["value"] }
-      searches = (performance_data["searches"] || []).map {|l| l["value"] }
-      problem_reports = (performance_data["problem_reports"] || []).map {|l| l["value"] }
-      search_terms = (performance_data["search_terms"] || []).map {|term| { keyword: term["Keyword"], total: term["TotalSearches"] } }
-      PerformanceData::LeadMetrics.new(
-        unique_pageviews: uniques,
-        exits_via_search: searches,
-        search_terms: search_terms,
-        problem_reports: problem_reports,
-      )
+  def metrics_from(artefact, performance_data, part_urls = [])
+    all_metrics = AllMetrics.new(performance_data, part_urls)
+    { lead_metrics: all_metrics.lead_metrics }.tap do |metrics|
+      metrics[:per_page_metrics] = {}
+      part_urls.each do |path|
+        metrics[:per_page_metrics][path] = all_metrics.metrics_for(path)
+      end
+      if metrics[:per_page_metrics] == {}
+        metrics[:per_page_metrics] = nil
+      end
     end
+  end
+end
+
+class AllMetrics
+  def initialize(performance_data, part_urls)
+    @performance_data = performance_data
+    @part_urls = part_urls
+  end
+
+  def lead_metrics
+    PerformanceData::Metrics.new(
+      unique_pageviews: performance_data_for("page_views", @part_urls).map {|l| l["value"] },
+      exits_via_search: performance_data_for("searches", @part_urls).map {|l| l["value"] },
+      problem_reports: performance_data_for("problem_reports", @part_urls).map {|l| l["value"] },
+      search_terms: performance_data_for("search_terms", @part_urls).map {|term| { keyword: term["Keyword"], total: term["TotalSearches"] } },
+    )
+  end
+
+  def metrics_for(path)
+    PerformanceData::Metrics.new(
+      unique_pageviews: performance_data_for("page_views", [path]).map {|l| l["value"] },
+      exits_via_search: performance_data_for("searches", [path]).map {|l| l["value"] },
+      problem_reports: performance_data_for("problem_reports", [path]).map {|l| l["value"] },
+    )
+  end
+
+  def performance_data_for(metric, part_urls)
+    data = @performance_data[metric] || []
+    part_urls.empty? ? data : data.select { |record| part_urls.include? record["path"] }
   end
 end
